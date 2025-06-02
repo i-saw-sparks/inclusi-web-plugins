@@ -2,31 +2,51 @@
 /**
  * Plugin Name: CRKR Custom Cart Loop
  * Description: Restringe la función de añadir al carrito a solo usuarios logueados en WooCommerce.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Crunchy Kernel
  */
 
 if (!defined('ABSPATH'))
     exit;
 
-add_filter('woocommerce_add_to_cart_validation', 'redirigir_checkout_si_ya_esta_en_carrito', 10, 5);
+add_filter('woocommerce_add_to_cart_validation', 'evitar_duplicado_y_redirigir_checkout', 10, 5);
 
-function redirigir_checkout_si_ya_esta_en_carrito($passed, $product_id, $quantity, $variation_id = '', $variations = '') {
+function mostrar_mensaje_login_registro() {
+    ?>
+    <div class="woocommerce-info mensaje-login-registro">
+        <strong>¿Quieres comprar este producto?</strong>
+        Para continuar, por favor inicia sesión en tu cuenta o regístrate si aún no tienes una.
+        <div class="botones-acceso">
+            <a class="btn-login" href="<?php echo esc_url(wp_login_url(get_permalink())); ?>">Iniciar sesión</a>
+            <a class="btn-registro" href="<?php echo esc_url(wp_registration_url()); ?>">Registrarse</a>
+        </div>
+    </div>
+    <?php
+}
+
+function evitar_duplicado_y_redirigir_checkout($passed, $product_id, $quantity, $variation_id = '', $variations = '') {
     foreach (WC()->cart->get_cart() as $cart_item) {
         if ($cart_item['product_id'] == $product_id) {
-            // Producto ya en el carrito: redirigir manualmente
-            wp_safe_redirect(wc_get_checkout_url());
-            exit;
+            // Ya está en el carrito, no lo agregamos otra vez
+            // Redirigimos al checkout
+            add_filter('woocommerce_add_to_cart_redirect', function() {
+                return wc_get_checkout_url();
+            });
+            return false;
         }
     }
-    return $passed;
+    return true;
+}
+
+
+function redirigir_al_carrito($url) {
+    return wc_get_cart_url();
 }
 
 // Mostrar mensaje en la página del producto
 add_action('woocommerce_single_product_summary', function () {
     if (!is_user_logged_in()) {
-        echo '<div class="woocommerce-info">Para continuar con la compra <a href="' . esc_url(wp_login_url(get_permalink())) . '">inicia sesión</a>   o <a href="' . esc_url(wp_registration_url()) . '">regístrate</a></div>';
-
+        mostrar_mensaje_login_registro();
     }
 });
 
@@ -52,11 +72,7 @@ add_action('wp_footer', function () {
         <div id="login-modal"
             style="display:none; position:fixed; top:50%; left:50%; transform: translate(-50%, -50%);
             background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:9999; max-width: 900px; border-radius: 10px;">
-            <div class="woocommerce-info" style="margin-bottom: 1em;">
-                Para continuar con la compra
-                <a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>">inicia sesión</a>
-                <a href="<?php echo esc_url(wp_registration_url()); ?>">regístrate</a>.
-            </div>
+            <?php mostrar_mensaje_login_registro(); ?>
             <button class="close-login-modal"
                 style="background:#333; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Cerrar</button>
         </div>
