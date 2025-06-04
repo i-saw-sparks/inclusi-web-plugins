@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CRKR Custom Cart Loop
  * Description: Restringe la función de añadir al carrito a solo usuarios logueados en WooCommerce.
- * Version: 1.0.2
+ * Version: 1.0.1
  * Author: Crunchy Kernel
  */
 
@@ -10,19 +10,6 @@ if (!defined('ABSPATH'))
     exit;
 
 add_filter('woocommerce_add_to_cart_validation', 'redirigir_checkout_si_ya_esta_en_carrito', 10, 5);
-
-function mostrar_mensaje_login_registro() {
-    ?>
-    <div class="woocommerce-info mensaje-login-registro">
-        <strong>¿Quieres comprar este producto?</strong>
-        Para continuar, por favor inicia sesión en tu cuenta o regístrate si aún no tienes una.
-        <div class="botones-acceso">
-            <a class="btn-login" href="<?php echo esc_url(wp_login_url(get_permalink())); ?>">Iniciar sesión</a>
-            <a class="btn-registro" href="<?php echo esc_url(wp_registration_url()); ?>">Registrarse</a>
-        </div>
-    </div>
-    <?php
-}
 
 function redirigir_checkout_si_ya_esta_en_carrito($passed, $product_id, $quantity, $variation_id = '', $variations = '') {
     foreach (WC()->cart->get_cart() as $cart_item) {
@@ -38,7 +25,8 @@ function redirigir_checkout_si_ya_esta_en_carrito($passed, $product_id, $quantit
 // Mostrar mensaje en la página del producto
 add_action('woocommerce_single_product_summary', function () {
     if (!is_user_logged_in()) {
-        mostrar_mensaje_login_registro();
+        echo '<div class="woocommerce-info">Para continuar con la compra <a href="' . esc_url(wp_login_url(get_permalink())) . '">inicia sesión</a>   o <a href="' . esc_url(wp_registration_url()) . '">regístrate</a></div>';
+
     }
 });
 
@@ -64,7 +52,11 @@ add_action('wp_footer', function () {
         <div id="login-modal"
             style="display:none; position:fixed; top:50%; left:50%; transform: translate(-50%, -50%);
             background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:9999; max-width: 900px; border-radius: 10px;">
-            <?php mostrar_mensaje_login_registro(); ?>
+            <div class="woocommerce-info" style="margin-bottom: 1em;">
+                Para continuar con la compra
+                <a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>">inicia sesión</a>
+                <a href="<?php echo esc_url(wp_registration_url()); ?>">regístrate</a>.
+            </div>
             <button class="close-login-modal"
                 style="background:#333; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Cerrar</button>
         </div>
@@ -101,3 +93,4 @@ add_action('wp_footer', function () {
         <?php
     }
 });
+
