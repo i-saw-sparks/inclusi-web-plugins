@@ -9,7 +9,7 @@
 if (!defined('ABSPATH'))
     exit;
 
-add_filter('woocommerce_add_to_cart_validation', 'redirigir_checkout_si_ya_esta_en_carrito', 10, 5);
+add_filter('woocommerce_add_to_cart_validation', 'evitar_duplicado_y_redirigir_checkout', 10, 5);
 
 function mostrar_mensaje_login_registro() {
     ?>
@@ -24,16 +24,24 @@ function mostrar_mensaje_login_registro() {
     <?php
 }
 
-function redirigir_checkout_si_ya_esta_en_carrito($passed, $product_id, $quantity, $variation_id = '', $variations = '') {
+function evitar_duplicado_y_redirigir_checkout($passed, $product_id, $quantity, $variation_id = '', $variations = '') {
     foreach (WC()->cart->get_cart() as $cart_item) {
         if ($cart_item['product_id'] == $product_id) {
-            // Producto ya en el carrito: redirigir manualmente
-            wp_safe_redirect(wc_get_checkout_url());
-            exit;
+            // Ya está en el carrito, no lo agregamos otra vez
+            // Redirigimos al checkout
+            add_filter('woocommerce_add_to_cart_redirect', function() {
+                return wc_get_checkout_url();
+            });
+            return false;
         }
     }
-    return $passed;
+    return true;
 }
+
+function redirigir_al_carrito($url) {
+    return wc_get_cart_url();
+}
+
 
 // Mostrar mensaje en la página del producto
 add_action('woocommerce_single_product_summary', function () {
